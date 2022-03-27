@@ -4,10 +4,12 @@ from threading import Thread
 
 import cv2
 
+# (MZ) added functions: HW sensor definition, crop (on full size image), and rescale to desired resolution
 
 class Camera:
     def __init__(self, camera_type=0, device_id=0, source="localhost:8080", flip=0, width=640, height=480, fps=30,
-                 enforce_fps=False, debug=False):
+                 enforce_fps=False, debug=False, s_width=0, s_height=0, crop=1, shift_x=-1, shift_y=-1, wbmode=1,
+                 exp_manual=0, exp_time=0, exp_gain=0, exp_digitalgain=0):
         # initialize all variables
         self.fps = fps
         self.camera_type = camera_type
@@ -18,6 +20,49 @@ class Camera:
         self.width = width
         self.height = height
         self.enforce_fps = enforce_fps
+        # (MZ) new settings 
+        self.s_width = width if s_width == 0 else s_width #sensor width
+        self.s_height = height if s_height == 0 else s_height #sensor height
+        # (MZ) shift define how image is shifted during cropping, -1 means it start from point zero
+        self.shift_x = shift_x
+        self.shift_y = shift_y
+        # (MZ) white balance: (0): off, (1): auto, (2): incandescent, (3): fluorescent, (4): warm-fluorescent, 
+        # (MZ) (5): daylight, (6): cloudy-daylight, (7): twilight, (8): shade, (9): manual
+        self.wbmode = wbmode
+        self.crop = crop #cropping image
+        if self.crop<1 and self.crop>0:
+            self.c_width = self.s_width * crop
+            self.c_height = self.s_height * crop
+            if shift_x == -1:
+                self.c_left = self.c_width * 1/2
+                self.c_right = self.c_width * 3/2
+            else:
+                self.c_left = self.shift_x
+                self.c_right = self.c_width + self.shift_x
+            if shift_y == -1:
+                self.c_top = self.c_height * 1/2
+                self.c_bottom = self.c_height * 3/2
+            else:
+                self.c_top = self.shift_y
+                self.c_bottom = self.c_height + self.shift_y
+            self.c_string = 'left=%d right=%d top=%d bottom=%d' % (self.c_left, self.c_right, self.c_top, self.c_bottom)
+        else:
+            self.c_string = ''
+        # (MZ) manual exposure setting and string generation
+        self.exp_manual = exp_manual
+        self.exp_time = exp_time
+        self.exp_gain = exp_gain
+        self.exp_digitalgain = exp_digitalgain
+        if self.exp_manual == 1:
+            self.exp_string = 'aelock=true exposuretimerange="%d %d" gainrange="%d %d" ispdigitalgainrange="%d %d"' % (self.exp_time, 
+                    self.exp_time, self.exp_gain, self.exp_gain, self.exp_digitalgain, self.exp_digitalgain)
+        else:
+            self.exp_string = ''
+
+        # debug
+        print('MICHAL')
+        print(self.c_string)
+        print(self.s_width)
 
         self.debug_mode = debug
         # track error value
@@ -50,16 +95,16 @@ class Camera:
             self.start()
 
     def __csi_pipeline(self, sensor_id=0):
-        return ('nvarguscamerasrc sensor-id=%d ! '
+        return ('nvarguscamerasrc sensor-id=%d wbmode=%d %s ! '
                 'video/x-raw(memory:NVMM), '
                 'width=(int)%d, height=(int)%d, '
                 'format=(string)NV12, framerate=(fraction)%d/1 ! '
-                'nvvidconv flip-method=%d ! '
-                'video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! '
+                'nvvidconv flip-method=%d %s ! '
+                'video/x-raw, width=(int)%d, height=(int)%d, pixel-aspect-ratio=1/1, format=(string)BGRx ! '
                 'videoconvert ! '
-                'video/x-raw, format=(string)BGR ! appsink' % (sensor_id,
-                                                               self.width, self.height, self.fps, self.flip_method,
-                                                               self.width, self.height))
+                'video/x-raw, format=(string)BGR ! appsink' % (sensor_id, self.wbmode, self.exp_string,
+                                                               self.s_width, self.s_height, self.fps, self.flip_method,
+                                                               self.c_string, self.width, self.height))
 
     def __usb_pipeline(self, device_name="/dev/video1"):
         return ('v4l2src device=%s ! '
