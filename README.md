@@ -68,6 +68,60 @@ camera = nano.Camera(flip=0, width=1280, height=800, fps=30)
 ```
 if the image is inverted, set ``flip = 2``
 
+#### Advanced camera settings
+Advanced camera settings include:
+* sensor resolution and image scaling,
+* image cropping,
+* white balance setting,
+* manual exposure.
+
+##### Sensor resolution and image scaling
+
+Sensor resolution depends on the driver. It is selected based on ``width, height`` variables by default. However, you may decide that you want to use a lower or higher resolution of a raw image using ``s_width, s_height``, which will be then scaled to final image resolution. It is beneficial when cropping camera images. The values have to be supported by the camera driver to be effective. Otherwise, the driver selects the best-supported resolution. By default ``s_width = width`` and ``s_height = height``.
+
+```python
+import nanocamera as nano
+# Create the Camera instance for No rotation (flip=0) with size of 1280 by 800 rescalled from 3840 by 2160
+camera = nano.Camera(flip=0, width=1280, height=800, fps=30, s_width=3840, s_height=2160)
+```
+
+##### Image cropping
+To crop the image use parameter ``crop`` in the range ``0`` to ``1``:
+```python
+import nanocamera as nano
+# Create the Camera instance for No rotation (flip=0) with size of 1280 by 800 rescalled from 3840 by 2160
+# Image is cropped to 50% in the centre of original image
+camera = nano.Camera(flip=0, width=1280, height=800, fps=30, s_width=3840, s_height=2160, crop=0.5)
+```
+
+The cropped area can be adjusted on the original image with the parameters ``shift_x`` and ``shift_y``, which define distance of the crop window from the top left-hand corner of the original image. Distance is defined in pixels of the raw image:
+```python
+import nanocamera as nano
+# Create the Camera instance for No rotation (flip=0) with size of 1280 by 800 rescalled from 3840 by 2160
+# Image is cropped to 50% in the centre of original image, starting from the point (400,400)
+camera = nano.Camera(flip=0, width=1280, height=800, fps=30, s_width=3840, s_height=2160, crop=0.5, shift_x=400, shift_y=400)
+```
+if ``shift_x`` or ``shift_y`` are not defined, cropped image is adjusted to the centre in an undefined axis.
+
+##### White balance
+To adjust white balance use the ``wbmode`` parameter, which can use the following [values](https://developer.ridgerun.com/wiki/index.php?title=NVIDIA_Jetson_ISP_Control#White_balance_modes_on_NVcamerasrc):
+```
+(0): off
+(1): auto
+(2): incandescent
+(3): fluorescent
+(4): warm-fluorescent
+(5): daylight
+(6): cloudy-daylight
+(7): twilight
+(8): shade
+(9): manual
+```
+
+##### Manual exposure settings
+To enable manual exposure select ``exp_manual=True`` and set the following parameters:
+``exp_time``, ``exp_gain``, and ``exp_digitalgain``.
+
 #### Multiple CSI Camera support.
 For Multiple CSI Cameras, set the ``device_id`` to the ID of the camera. 
 ```python
