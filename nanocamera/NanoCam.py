@@ -9,7 +9,7 @@ import cv2
 class Camera:
     def __init__(self, camera_type=0, device_id=0, source="localhost:8080", flip=0, width=640, height=480, fps=30,
                  enforce_fps=False, debug=False, s_width=0, s_height=0, crop=1, shift_x=-1, shift_y=-1, wbmode=1,
-                 exp_manual=0, exp_time=0, exp_gain=0, exp_digitalgain=0):
+                 exp_manual=False, exp_time=0, exp_gain=0, exp_digitalgain=0):
         # initialize all variables
         self.fps = fps
         self.camera_type = camera_type
@@ -53,16 +53,11 @@ class Camera:
         self.exp_time = exp_time
         self.exp_gain = exp_gain
         self.exp_digitalgain = exp_digitalgain
-        if self.exp_manual == 1:
+        if self.exp_manual == True:
             self.exp_string = 'aelock=true exposuretimerange="%d %d" gainrange="%d %d" ispdigitalgainrange="%d %d"' % (self.exp_time, 
                     self.exp_time, self.exp_gain, self.exp_gain, self.exp_digitalgain, self.exp_digitalgain)
         else:
             self.exp_string = ''
-
-        # debug
-        print('MICHAL')
-        print(self.c_string)
-        print(self.s_width)
 
         self.debug_mode = debug
         # track error value
