@@ -23,7 +23,7 @@ If you like **NanoCamera** library - give it a star, or fork it and contribute!.
 * Easily read images as ``numpy`` arrays with ``image = camera.read()``
 * Supports threaded read - available to all camera types. To enable a fast threaded read, you will enable the enforce_fps: ``enforce_fps = True``
 * Check the status of the camera after initialization with ``isReady()`` function. Returns ``True`` if ready and ``False`` if otherwise.
-* Provide debugging support. Added error codes and an optional exception handling. See example in [Debugging](https://github.com/thehapyone/NanoCamera#debugging). Now you can restart the camera if something goes wrong or send an admin notice if your camera goes down.
+* Provide debugging support. Added error codes and an optional exception handling. See example in [Debugging](https://github.com/michalzawierta/NanoCamera#debugging). Now you can restart the camera if something goes wrong or send an admin notice if your camera goes down.
 * Support multiple CSI cameras using the ``device_id`` parameter. See examples.
 
 ## Requirements
@@ -41,17 +41,17 @@ pip3 install nanocamera
 ```
 ##### Manual Installation
 ```bash
-git clone https://github.com/thehapyone/NanoCamera
+git clone https://github.com/michalzawierta/NanoCamera
 cd NanoCamera
 sudo python3 setup.py install
 ```
 
 ## Usage & Example
-Using NanoCamera is super easy. Below we show some usage examples.  You can find more in the [examples](https://github.com/thehapyone/NanoCamera/tree/master/examples).
+Using NanoCamera is super easy. Below we show some usage examples.  You can find more in the [examples](https://github.com/michalzawierta/NanoCamera/tree/master/examples).
 ### Working with CSI Camera
 For CSI Cameras, the ``camera_type = 0``.
 
-Find here for full [CSI camera example](https://github.com/thehapyone/NanoCamera/tree/master/examples/CSI_camera.py)
+Find here for full [CSI camera example](https://github.com/michalzawierta/NanoCamera/tree/master/examples/CSI_camera.py)
 
 Python Example - 
 Create a CSI camera using default FPS=30, default image size: 640 by 480 and with no rotation (flip=0)
@@ -103,6 +103,14 @@ camera = nano.Camera(flip=0, width=1280, height=800, fps=30, s_width=3840, s_hei
 ```
 if ``shift_x`` or ``shift_y`` are not defined, cropped image is adjusted to the centre in an undefined axis.
 
+Alternatively, image can be cropped by defining four edges of the image, values are numbers of pixels on raw image from the sensor.
+```python
+import nanocamera as nano
+# Create the Camera instance for No rotation (flip=0) with size of 1280 by 800 rescalled from 3840 by 2160
+# Image is cropped based on four coordinates defined below, limited by points (10,300) and (2700,1800)
+camera = nano.Camera(flip=0, width=1280, height=800, fps=30, s_width=3840, s_height=2160, c_left=10, c_right=2700, c_top=300, c_bottom=1800)
+```
+
 ##### White balance
 To adjust white balance use the ``wbmode`` parameter, which can use the following [values](https://developer.ridgerun.com/wiki/index.php?title=NVIDIA_Jetson_ISP_Control#White_balance_modes_on_NVcamerasrc):
 ```
@@ -135,7 +143,7 @@ camera_2 = nano.Camera(device_id=1, flip=0, width=1280, height=800, fps=30)
 
 ### Working with USB Camera
 For USB Cameras, set the ``camera_type = 1``, and set the ``device_id`` as well.
-Find here for full [USB camera example](https://github.com/thehapyone/NanoCamera/tree/master/examples/USB_camera.py)
+Find here for full [USB camera example](https://github.com/michalzawierta/NanoCamera/tree/master/examples/USB_camera.py)
 
 Python Example - 
 Create USB camera connected to ``/dev/video1``
@@ -154,7 +162,7 @@ ls /dev/video*
 
 ### Working with RTSP streaming camera or streaming video
 For RTSP source, set the ``camera_type = 2``, and set the ``source`` as well.
-Find here for full [RTSP camera example](https://github.com/thehapyone/NanoCamera/tree/master/examples/RTSP_camera.py)
+Find here for full [RTSP camera example](https://github.com/michalzawierta/NanoCamera/tree/master/examples/RTSP_camera.py)
 
 Python Example - 
 Create RTSP receiving camera client. RTSP location example:  ``rtsp://192.168.1.26:8554/stream``
@@ -168,7 +176,7 @@ camera = nano.Camera(camera_type=2, source=rtsp_location, width=640, height=480,
 
 ### Working with IP or any MJPEG streaming camera or video
 For IP/MJPEG Cameras, set the ``camera_type = 3``, and set the streaming ``source`` as well.
-Find here for full [MJPEG camera example](https://github.com/thehapyone/NanoCamera/tree/master/examples/MJPEG_camera.py)
+Find here for full [MJPEG camera example](https://github.com/michalzawierta/NanoCamera/tree/master/examples/MJPEG_camera.py)
 
 Python Example - 
 Create an IP camera client connected to a camera streaming to ``http://192.168.1.26:80/stream``
@@ -316,7 +324,7 @@ else:
  
 Enabling the ``debug = True`` parameter allows raising an exception to the main program. This might be useful for parallel computing if you running multiple threads. Without the ``debug`` enabled, your program will continue as normal, and worse if you're enabled the frame rate enforcement which uses the thread read function, you will keep getting image data but those images are old/static images.
 
-See an example using the ``debug`` parameter and handling exceptions at different levels. Find here for full [debugging example](https://github.com/thehapyone/NanoCamera/tree/master/examples/USB_camera_with_debug.py)
+See an example using the ``debug`` parameter and handling exceptions at different levels. Find here for full [debugging example](https://github.com/michalzawierta/NanoCamera/tree/master/examples/USB_camera_with_debug.py)
 
 ```python
 if __name__ == '__main__':

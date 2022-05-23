@@ -9,7 +9,9 @@ import cv2
 class Camera:
     def __init__(self, camera_type=0, device_id=0, source="localhost:8080", flip=0, width=640, height=480, fps=30,
                  enforce_fps=False, debug=False, s_width=0, s_height=0, crop=1, shift_x=-1, shift_y=-1, wbmode=1,
-                 exp_manual=False, exp_time=0, exp_gain=0, exp_digitalgain=0):
+                 exp_manual=False, exp_time=0, exp_gain=0, exp_digitalgain=0, c_left=0, c_right=0, c_top=0, c_bottom=0,
+                 rec=0, s_fpsa=1, s_fpsb=1, s_path=""):
+                 #rec frame rate, rec location
         # initialize all variables
         self.fps = fps
         self.camera_type = camera_type
@@ -26,10 +28,18 @@ class Camera:
         # (MZ) shift define how image is shifted during cropping, -1 means it start from point zero
         self.shift_x = shift_x
         self.shift_y = shift_y
+        # (MZ) alternatively use cropping coordinates
+        # (MZ) based on the final resolution
+        self.c_left = c_left
+        self.c_right = c_right
+        self.c_top = c_top
+        self.c_bottom = c_bottom
         # (MZ) white balance: (0): off, (1): auto, (2): incandescent, (3): fluorescent, (4): warm-fluorescent, 
         # (MZ) (5): daylight, (6): cloudy-daylight, (7): twilight, (8): shade, (9): manual
         self.wbmode = wbmode
-        self.crop = crop #cropping image
+        # (MZ) cropping image
+        self.crop = crop 
+        # (MZ) if crop is defined, use crop parameters
         if self.crop<1 and self.crop>0:
             self.c_width = self.s_width * crop
             self.c_height = self.s_height * crop
@@ -46,6 +56,10 @@ class Camera:
                 self.c_top = self.shift_y
                 self.c_bottom = self.c_height + self.shift_y
             self.c_string = 'left=%d right=%d top=%d bottom=%d' % (self.c_left, self.c_right, self.c_top, self.c_bottom)
+        # (MZ) if crop is not defined, try to use cropping coordinates
+        # (MZ) cropping is done on the raw image before scaling
+        elif (self.c_left+self.c_right+self.c_top+self.c_bottom)>0:
+            self.c_string = 'left=%d right=%d top=%d bottom=%d' % (self.c_left, self.c_right, self.c_top, self.c_bottom)
         else:
             self.c_string = ''
         # (MZ) manual exposure setting and string generation
@@ -58,6 +72,13 @@ class Camera:
                     self.exp_time, self.exp_gain, self.exp_gain, self.exp_digitalgain, self.exp_digitalgain)
         else:
             self.exp_string = ''
+
+        # (MZ) rec = 1 to enable recording images, s_fpsa/s_fpsb define how often images are saved and s_path define where to save images
+        # for example s_path = "/tmp/photos/name%%05d", default path is not defined at the moment
+        self.rec = rec
+        self.s_fpsa = s_fpsa
+        self.s_fpsb = s_fpsb
+        self.s_path = s_path
 
         self.debug_mode = debug
         # track error value
@@ -84,7 +105,7 @@ class Camera:
         self.cap = None
 
         # open the camera interface
-        self.open()
+        self.open(self.rec)
         # enable a threaded read if enforce_fps is active
         if self.enforce_fps:
             self.start()
@@ -100,6 +121,19 @@ class Camera:
                 'video/x-raw, format=(string)BGR ! appsink' % (sensor_id, self.wbmode, self.exp_string,
                                                                self.s_width, self.s_height, self.fps, self.flip_method,
                                                                self.c_string, self.width, self.height))
+
+    def __csi_pipeline_rec(self, sensor_id=0):
+        return ('nvarguscamerasrc sensor-id=%d wbmode=%d %s ! '
+                'video/x-raw(memory:NVMM), '
+                'width=(int)%d, height=(int)%d, '
+                'format=(string)NV12, framerate=(fraction)%d/1 ! '
+                'nvvidconv flip-method=%d %s ! video/x-raw(memory:NVMM) ! tee name=t ! queue ! nvvidconv !'
+                'video/x-raw ! '
+                'videorate drop-only=true ! video/x-raw,framerate=%d/%d ! nvjpegenc ! identity drop-allocation=true ! multifilesink location=%s t. ! '
+                'queue ! nvvidconv ! video/x-raw, format=(string)BGRx ! videoconvert ! '
+                'video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGR ! identity drop-allocation=true ! appsink' % (sensor_id, self.wbmode, self.exp_string,
+                                                               self.s_width, self.s_height, self.fps, self.flip_method, self.c_string,
+                                                               self.s_fpsa, self.s_fpsb, self.s_path, self.width, self.height))
 
     def __usb_pipeline(self, device_name="/dev/video1"):
         return ('v4l2src device=%s ! '
@@ -191,11 +225,15 @@ class Camera:
         else:
             return self.__error_value, True
 
+    # (MZ) added option rec, which will select 
     def __open_csi(self):
         # opens an inteface to the CSI camera
         try:
             # initialize the first CSI camera
-            self.cap = cv2.VideoCapture(self.__csi_pipeline(self.camera_id), cv2.CAP_GSTREAMER)
+            if self.rec == 1:
+                self.cap = cv2.VideoCapture(self.__csi_pipeline_rec(self.camera_id), cv2.CAP_GSTREAMER)
+            else:
+                self.cap = cv2.VideoCapture(self.__csi_pipeline(self.camera_id), cv2.CAP_GSTREAMER)
             if not self.cap.isOpened():
                 # raise an error here
                 # update the error value parameter
