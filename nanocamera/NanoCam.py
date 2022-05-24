@@ -105,7 +105,7 @@ class Camera:
         self.cap = None
 
         # open the camera interface
-        self.open(self.rec)
+        self.open()
         # enable a threaded read if enforce_fps is active
         if self.enforce_fps:
             self.start()
