@@ -192,7 +192,7 @@ class Camera:
         # open the camera inteface
         # determine what type of camera to open
         if self.camera_type == 0:
-            # then CSI camera
+            # then CSI camera 
             self.__open_csi()
         elif self.camera_type == 2:
             # rtsp camera
