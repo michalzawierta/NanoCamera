@@ -1,6 +1,8 @@
 # Import the needed libraries
 import time
 from threading import Thread
+import os
+import subprocess
 
 import cv2
 
@@ -10,7 +12,7 @@ class Camera:
     def __init__(self, camera_type=0, device_id=0, source="localhost:8080", flip=0, width=640, height=480, fps=30,
                  enforce_fps=False, debug=False, s_width=0, s_height=0, crop=1, shift_x=-1, shift_y=-1, wbmode=1,
                  exp_manual=False, exp_time=0, exp_gain=0, exp_digitalgain=0, c_left=0, c_right=0, c_top=0, c_bottom=0,
-                 rec=0, s_fpsa=1, s_fpsb=1, s_path=""):
+                 rec=0, s_fpsa=1, s_fpsb=1, s_path="/mnt/ramdisk/image%%d.jpg"):
                  #rec frame rate, rec location
         # initialize all variables
         self.fps = fps
@@ -387,3 +389,13 @@ class Camera:
             self.__error_value.append(4)
             if self.debug_mode:
                 raise RuntimeError('Error: Could not release camera')
+
+class Filemover:
+    def __init__(self,source="/mnt/ramdisk",destination="."):
+        self.source = source
+        self.destination = destination
+        self.command = 'find %s -maxdepth 1 -mmin +1 -type f -name "*.jpg" -exec mv "{}" %s \\;' % (self.source, self.destination)
+        self.proc = subprocess.Popen(['watch', self.command], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+    def __del__(self):
+        self.proc.terminate()
