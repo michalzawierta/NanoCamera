@@ -394,7 +394,7 @@ class Filemover:
     def __init__(self,source="/mnt/ramdisk",destination="."):
         self.source = source
         self.destination = destination
-        self.command = 'find %s -maxdepth 1 -mmin +0.1 -type f -name "*.jpg" -exec mv "{}" %s \\;' % (self.source, self.destination)
+        self.command = 'find %s -maxdepth 1 -mmin +0.1 -type f -name "*.jpg" -exec mv --backup=numbered "{}" %s \\;' % (self.source, self.destination)
         self.proc = subprocess.Popen(['watch', self.command], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
     def __del__(self):
